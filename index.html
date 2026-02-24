@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KZK Capital | Institutional Trading Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
+                    colors: {
+                        brand: { 400: '#D4AF37', 500: '#C5A028', 600: '#AA8822' }, /* Institutional Gold */
+                        dark: { 900: '#030303', 800: '#0a0a0c', 700: '#121214', 600: '#1f1f22' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #030303; color: #e4e4e7; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0c; }
+        ::-webkit-scrollbar-thumb { background: #1f1f22; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
+        
+        .glass-panel { background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .tab-active { border-left: 3px solid #D4AF37; background: linear-gradient(90deg, rgba(212,175,55,0.1) 0%, rgba(0,0,0,0) 100%); color: #D4AF37; }
+        .hidden-section { display: none; }
+        
+        .image-placeholder {
+            width: 100%; height: 250px;
+            background: repeating-linear-gradient(45deg, #121214, #121214 10px, #0a0a0c 10px, #0a0a0c 20px);
+            border: 1px dashed #3f3f46; display: flex; align-items: center; justify-content: center;
+            border-radius: 0.5rem; color: #a1a1aa; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; margin: 1rem 0;
+        }
+
+        /* Hide TradingView Copyright tags nicely */
+        .tradingview-widget-copyright { display: none !important; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-dark-900">
+
+    <!-- GLOBAL TICKER BAR (TRADINGVIEW REALTIME) -->
+    <div class="w-full bg-dark-900 border-b border-dark-600 h-10 overflow-hidden flex items-center">
+        <!-- TradingView Widget BEGIN -->
+        <div class="tradingview-widget-container" style="width: 100%; height: 100%;">
+            <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+            {
+            "symbols": [
+                { "proName": "OANDA:XAUUSD", "title": "Gold" },
+                { "proName": "FX:EURUSD", "title": "EUR/USD" },
+                { "proName": "FX:GBPUSD", "title": "GBP/USD" },
+                { "proName": "FX:USDJPY", "title": "USD/JPY" },
+                { "proName": "BINANCE:BTCUSDT", "title": "Bitcoin" },
+                { "proName": "CAPITALCOM:DXY", "title": "US Dollar Index" }
+            ],
+            "showSymbolLogo": true,
+            "isTransparent": true,
+            "displayMode": "adaptive",
+            "colorTheme": "dark",
+            "locale": "id"
+            }
+            </script>
+        </div>
+        <!-- TradingView Widget END -->
+    </div>
+
+    <!-- NAVIGATION BAR -->
+    <nav class="sticky top-0 z-50 glass-panel border-b border-dark-600 shadow-2xl">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center cursor-pointer group" onclick="showSection('home')">
+                    <span class="font-black text-2xl tracking-widest text-white border-r border-dark-600 pr-4 mr-4">KZK<span class="text-brand-400">CAPITAL</span></span>
+                    <span class="hidden md:block text-[10px] text-gray-500 font-mono tracking-widest uppercase mt-1">Institutional<br>Data Terminal</span>
+                </div>
+                
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#" onclick="showSection('home')" class="text-sm font-semibold text-gray-400 hover:text-white transition">Home</a>
+                    <a href="#" onclick="showSection('academy')" class="text-sm font-semibold text-gray-400 hover:text-white transition">Academy</a>
+                    <a href="#" onclick="showSection('terminal')" class="text-sm font-semibold text-brand-400 hover:text-brand-300 transition flex items-center bg-brand-400/10 px-3 py-1.5 rounded-lg border border-brand-400/30">
+                        <i class="fas fa-satellite-dish mr-2 text-xs animate-pulse"></i> Market Terminal
+                    </a>
+                    <div id="authArea" class="flex items-center pl-6 border-l border-dark-600 gap-4"></div>
+                </div>
+
+                <div class="md:hidden flex items-center">
+                    <button id="mobileMenuBtn" class="text-gray-400 hover:text-white focus:outline-none bg-dark-700 p-2 rounded">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mobileMenu" class="hidden md:hidden bg-dark-800 border-b border-dark-600 px-4 pt-2 pb-6 absolute w-full shadow-2xl">
+             <a href="#" onclick="showSection('home'); toggleMobileMenu()" class="block py-3 text-gray-300 font-semibold border-b border-dark-700">Home</a>
+             <a href="#" onclick="showSection('academy'); toggleMobileMenu()" class="block py-3 text-gray-300 font-semibold border-b border-dark-700">Academy LMS</a>
+             <a href="#" onclick="showSection('terminal'); toggleMobileMenu()" class="block py-3 text-brand-400 font-semibold border-b border-dark-700"><i class="fas fa-satellite-dish mr-2"></i> Market Terminal</a>
+             <div id="mobileAuthArea" class="pt-4 flex flex-col gap-3"></div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-grow w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ================= SECTION: HOME ================= -->
+        <section id="home" class="hidden-section">
+            <div class="relative rounded-3xl overflow-hidden glass-panel border border-dark-600 min-h-[600px] flex items-center mb-12 shadow-2xl">
+                <div class="absolute inset-0 z-0" style="background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px); background-size: 30px 30px;"></div>
+                <div class="absolute top-1/2 right-1/4 w-[600px] h-[600px] bg-brand-500/10 rounded-full blur-[120px] -translate-y-1/2 z-0 pointer-events-none"></div>
+
+                <div class="relative z-10 p-8 md:p-16 lg:w-3/4">
+                    <div class="inline-block bg-dark-900 border border-dark-600 rounded-full px-4 py-1.5 mb-6 text-xs font-mono text-gray-400 shadow-lg">
+                        <span class="w-2 h-2 inline-block bg-up rounded-full mr-2"></span> REAL-TIME DATA CONNECTED
+                    </div>
+                    <h1 class="text-5xl md:text-7xl font-black mb-6 leading-[1.1] tracking-tight text-white">
+                        Master the <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-yellow-200">Storyline.</span><br>
+                        Dominate the Market.
+                    </h1>
+                    <p class="text-lg text-gray-400 mb-10 max-w-2xl leading-relaxed">
+                        Platform edukasi dan analitik data kelas institusi. Pelajari struktur pasar (Breakout & Retracement) dan pantau pergerakan harga global secara real-time bersama KZK Capital.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button onclick="showSection('terminal')" class="bg-brand-500 hover:bg-brand-400 text-dark-900 font-bold px-8 py-4 rounded-xl transition-all font-mono text-sm flex justify-center items-center shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+                            <i class="fas fa-chart-line mr-3"></i> BUKA TERMINAL
+                        </button>
+                        <button onclick="openAuthModal('register')" class="bg-dark-800 border border-dark-600 hover:border-brand-400 text-white font-bold px-8 py-4 rounded-xl transition-all font-mono text-sm flex justify-center items-center">
+                            JOIN ACADEMY
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: ACADEMY (LMS) ================= -->
+        <section id="academy" class="hidden-section">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-dark-700 pb-6">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black text-white tracking-tight">Sequence <span class="text-brand-400">Session</span></h2>
+                    <p class="text-gray-400 mt-2 font-mono text-sm">Learning Management System (LMS)</p>
+                </div>
+            </div>
+            
+            <div id="academyLockMsg" class="mb-6 bg-dark-800 border-l-4 border-blue-500 p-4 rounded-xl flex items-center justify-between shadow-lg hidden">
+                <div class="flex items-center">
+                    <i class="fas fa-shield-alt text-blue-400 mr-4 text-2xl"></i>
+                    <div>
+                        <p class="text-white font-bold text-sm">Akses Akun Basic</p>
+                        <p class="text-gray-400 text-xs mt-1">Materi dasar terbuka. Upgrade ke Elite VIP untuk membuka rahasia Valid Retracement (VR).</p>
+                    </div>
+                </div>
+                <button onclick="alert('Hubungi Admin via WA untuk Upgrade')" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded">UPGRADE</button>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Sidebar -->
+                <div class="w-full lg:w-[320px] flex-shrink-0">
+                    <div class="glass-panel rounded-2xl overflow-hidden sticky top-24 shadow-2xl">
+                        <div class="bg-dark-900 p-5 border-b border-dark-700 flex items-center gap-3">
+                            <i class="fas fa-book text-brand-400"></i>
+                            <h3 class="font-bold text-sm text-white uppercase tracking-widest font-mono">Modul Silabus</h3>
+                        </div>
+                        <ul class="flex flex-col" id="moduleList"></ul>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="w-full lg:w-[calc(100%-352px)]">
+                    <div class="glass-panel rounded-2xl p-6 md:p-12 min-h-[600px] shadow-2xl" id="moduleContent"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: MARKET TERMINAL ================= -->
+        <section id="terminal" class="hidden-section">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4 border-b border-dark-700 pb-4">
+                <div>
+                    <h2 class="text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+                        <i class="fas fa-server text-brand-400 text-2xl"></i> Institutional Terminal
+                    </h2>
+                    <p class="text-gray-500 text-sm font-mono mt-1">Live Market Data by TradingView</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                <!-- LEFT COLUMN -->
+                <div class="xl:col-span-3 space-y-6">
+                    
+                    <!-- Real-time Mini Charts (TradingView) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- XAUUSD -->
+                        <div class="glass-panel rounded-xl overflow-hidden h-[200px] border-t-2 border-brand-400">
+                            <div class="tradingview-widget-container" style="width: 100%; height: 100%;">
+                                <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+                                {
+                                "symbol": "OANDA:XAUUSD", "width": "100%", "height": "100%", "locale": "id",
+                                "dateRange": "1D", "colorTheme": "dark", "isTransparent": true, "autosize": true,
+                                "largeChartUrl": ""
+                                }
+                                </script>
+                            </div>
+                        </div>
+                        <!-- BTCUSD -->
+                        <div class="glass-panel rounded-xl overflow-hidden h-[200px] border-t-2 border-orange-500">
+                            <div class="tradingview-widget-container" style="width: 100%; height: 100%;">
+                                <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+                                {
+                                "symbol": "BINANCE:BTCUSDT", "width": "100%", "height": "100%", "locale": "id",
+                                "dateRange": "1D", "colorTheme": "dark", "isTransparent": true, "autosize": true
+                                }
+                                </script>
+                            </div>
+                        </div>
+                        <!-- EURUSD -->
+                        <div class="glass-panel rounded-xl overflow-hidden h-[200px] border-t-2 border-blue-500">
+                            <div class="tradingview-widget-container" style="width: 100%; height: 100%;">
+                                <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+                                {
+                                "symbol": "FX:EURUSD", "width": "100%", "height": "100%", "locale": "id",
+                                "dateRange": "1D", "colorTheme": "dark", "isTransparent": true, "autosize": true
+                                }
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Catalyst & Analysis Section -->
+                    <div class="bg-dark-800 rounded-2xl p-6 md:p-8 border border-dark-600 shadow-2xl relative overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-dark-600 pb-4 mb-6 relative z-10">
+                            <h3 class="text-xl font-black text-white flex items-center">
+                                <i class="fas fa-bolt text-brand-400 mr-3"></i> Market Catalyst & Storyline
+                            </h3>
+                            <span class="bg-dark-900 border border-dark-600 text-gray-400 text-[10px] font-bold px-3 py-1.5 rounded uppercase font-mono tracking-wider">KZK Insight</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                            <div>
+                                <h4 class="text-gray-500 font-mono text-xs uppercase tracking-widest mb-3 font-bold border-l-2 border-brand-400 pl-2">Kondisi Makro (USD & XAU)</h4>
+                                <p class="text-gray-300 text-sm leading-relaxed mb-4">
+                                    Saat ini pergerakan Emas dan USD sangat dipengaruhi oleh data fundamental Amerika Serikat dan geopolitik. Perhatikan data Inflasi dan kebijakan The Fed. Jika suku bunga ditahan, USD cenderung menguat dan menekan harga emas.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 class="text-gray-500 font-mono text-xs uppercase tracking-widest mb-3 font-bold border-l-2 border-blue-500 pl-2">KZK Setup (Storyline)</h4>
+                                <div class="space-y-4">
+                                    <div class="bg-dark-900 border border-dark-700 p-5 rounded-xl">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-white font-bold text-sm bg-brand-400/20 text-brand-400 px-2 py-0.5 rounded text-xs">XAUUSD - WAIT & SEE</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400 leading-relaxed">Cek apakah sudah terjadi <b>BO Basic / Structure</b> yang valid di H4/H1 hari ini. Jangan masuk sebelum ada konfirmasi <i>Retracement</i> yang jelas ke area Origin.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Full Real-time Chart (TradingView Advanced) -->
+                    <div class="glass-panel rounded-2xl p-2 border border-dark-600 h-[500px]">
+                        <div class="tradingview-widget-container" style="width: 100%; height: 100%;">
+                            <div class="tradingview-widget-container__widget" style="height: calc(100% - 32px);"></div>
+                            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+                            {
+                            "autosize": true, "symbol": "OANDA:XAUUSD", "interval": "60", "timezone": "Asia/Jakarta",
+                            "theme": "dark", "style": "1", "locale": "id", "enable_publishing": false,
+                            "backgroundColor": "rgba(10, 10, 12, 1)", "gridColor": "rgba(31, 31, 34, 1)",
+                            "hide_top_toolbar": false, "hide_legend": false, "save_image": false,
+                            "container_id": "tradingview_kzk"
+                            }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN (Real-time Eco Calendar) -->
+                <div class="xl:col-span-1">
+                    <div class="glass-panel rounded-2xl p-2 h-full border border-dark-600 shadow-xl overflow-hidden min-h-[600px]">
+                        <!-- TradingView Economic Calendar Widget -->
+                        <div class="tradingview-widget-container" style="width: 100%; height: 100%;">
+                            <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
+                            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                            {
+                            "colorTheme": "dark", "isTransparent": true, "width": "100%", "height": "100%",
+                            "locale": "id", "importanceFilter": "-1,0,1", "currencyFilter": "USD,EUR,GBP,JPY"
+                            }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-dark-900 border-t border-dark-600 py-10 mt-auto">
+        <div class="max-w-[1440px] mx-auto px-4 text-center">
+            <span class="font-black text-xl tracking-widest text-white block mb-4">KZK<span class="text-brand-400">CAPITAL</span></span>
+            <p class="text-gray-600 text-[10px] max-w-4xl mx-auto leading-relaxed mb-6 font-mono uppercase text-justify md:text-center">
+                Peringatan Risiko: Trading Valuta Asing dan Komoditas membawa risiko tinggi. Data pada platform ini disediakan oleh TradingView. KZK Capital merupakan platform edukasi.
+            </p>
+        </div>
+    </footer>
+
+    <!-- AUTH MODAL -->
+    <div id="authModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/90 backdrop-blur-sm px-4">
+        <div class="bg-dark-800 border border-dark-600 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden relative" id="authBox">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white bg-dark-900 p-2 rounded-full w-8 h-8 flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="p-8">
+                <div class="text-center mb-6">
+                    <i class="fas fa-fingerprint text-4xl text-brand-400 mb-3"></i>
+                    <h2 id="authTitle" class="text-2xl font-black text-white font-mono tracking-tight">System Login</h2>
+                </div>
+                
+                <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+                    <div id="nameFieldGroup" class="hidden">
+                        <input type="text" id="authName" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-brand-400 font-mono transition" placeholder="Username">
+                    </div>
+                    <div>
+                        <input type="email" id="authEmail" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-brand-400 font-mono transition" placeholder="Email Address">
+                    </div>
+                    <div>
+                        <input type="password" id="authPassword" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-brand-400 font-mono transition" placeholder="Password">
+                    </div>
+                    <div id="authError" class="text-red-400 text-xs hidden font-mono bg-red-500/10 p-2 rounded text-center"></div>
+                    <button type="submit" id="authSubmitBtn" class="w-full bg-brand-500 hover:bg-brand-400 text-dark-900 font-black py-3.5 rounded-xl transition font-mono text-sm mt-2 shadow-lg">
+                        AUTHORIZE
+                    </button>
+                </form>
+                <div class="mt-6 text-center text-xs text-gray-500 font-mono border-t border-dark-700 pt-6">
+                    <span id="authSwitchText">No account?</span> 
+                    <a href="#" id="authSwitchLink" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-bold ml-1">Register Access</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT SYSTEM -->
+    <script>
+        /* ================= ROUTING & NAV ================= */
+        function showSection(sectionId) {
+            document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden-section'));
+            document.getElementById(sectionId).classList.remove('hidden-section');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if(sectionId === 'academy') loadAcademyMenu();
+        }
+
+        function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('hidden'); }
+        document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+
+        /* ================= ACADEMY CONTENT ================= */
+        const academyModules = [
+            {
+                id: 'mod1', title: '1. Breakout Basic & Structure', isFree: true,
+                content: `
+                    <div class="mb-4 text-[10px] font-mono text-gray-500 uppercase tracking-widest border-b border-dark-600 pb-2">Module 1 / Market Structure</div>
+                    <h3 class="text-3xl font-black text-white mb-6">Membaca Current Market Price (CMP)</h3>
+                    <p class="text-gray-300 mb-6 text-sm leading-relaxed">Dalam ekosistem KZK Capital, menemukan <b>CMP</b> adalah langkah awal mutlak sebelum analisa apapun dilakukan. CMP mewakili arah Breakout terbaru.</p>
+                    
+                    <h4 class="font-bold text-white text-lg mt-8 mb-4 border-l-2 border-brand-400 pl-3">Dua Jenis Breakout (BO)</h4>
+                    <div class="space-y-10">
+                        <div class="bg-dark-800 p-6 md:p-8 rounded-2xl border border-dark-600">
+                            <h5 class="text-xl font-black text-white mb-3">1. Breakout Basic</h5>
+                            <p class="text-sm text-gray-400 leading-relaxed mb-6">Penembusan level secara langsung (running) tanpa membentuk struktur (ayunan). Setup ini tergolong <b>High Risk</b>.</p>
+                            <div class="image-placeholder"></div>
+                        </div>
+                        <div class="bg-dark-800 p-6 md:p-8 rounded-2xl border border-dark-600">
+                            <h5 class="text-xl font-black text-white mb-3">2. Breakout Structure</h5>
+                            <p class="text-sm text-gray-400 leading-relaxed mb-6">Penembusan yang didahului oleh pembentukan struktur harga yang jelas (swing). Tergolong <b>Low Risk</b>.</p>
+                            <div class="image-placeholder"></div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'mod2', title: '2. Konsep Retracement', isFree: true,
+                content: `
+                    <div class="mb-4 text-[10px] font-mono text-gray-500 uppercase tracking-widest border-b border-dark-600 pb-2">Module 2 / Market Breathing</div>
+                    <h3 class="text-3xl font-black text-white mb-6">Konsep Pembalikan (Retracement)</h3>
+                    <p class="text-gray-300 mb-6 text-sm leading-relaxed">Setelah terjadi Breakout, institusi perlu mengambil nafas atau mengumpulkan likuiditas sebelum melanjutkan tren. Area kembalinya harga ini disebut <b>Retracement</b>.</p>
+                    <div class="bg-dark-900 border border-dark-600 p-6 rounded-2xl mb-8">
+                        <p class="text-gray-400 text-sm">Tunggu harga kembali (retrace) ke area <i>Origin</i> atau <i>Barrier</i> sebelum mengeksekusi Entry.</p>
+                    </div>
+                    <div class="image-placeholder"></div>
+                `
+            },
+            {
+                id: 'mod3', title: '3. Valid Retracement (VR) <i class="fas fa-lock ml-2 text-dark-600"></i>', isFree: false,
+                content: `
+                    <div class="text-center py-20 flex flex-col items-center justify-center">
+                        <div class="w-20 h-20 bg-dark-900 border border-dark-600 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,0,0,0.5)]"><i class="fas fa-lock text-3xl text-gray-600"></i></div>
+                        <h3 class="text-2xl font-black text-white mb-3 tracking-tight">VIP Elite Module</h3>
+                        <p class="text-gray-400 text-sm max-w-md mx-auto mb-8 leading-relaxed">Materi <b>SOP Valid Retracement (VR)</b>, rahasia hierarki MTF, dan aturan konfirmasi mutlak dikunci untuk publik.</p>
+                    </div>
+                `
+            }
+        ];
+
+        function loadAcademyMenu() {
+            const list = document.getElementById('moduleList');
+            const content = document.getElementById('moduleContent');
+            list.innerHTML = '';
+            
+            const userStr = localStorage.getItem('kzk_system_user');
+            const isLoggedIn = !!userStr;
+            const isVip = isLoggedIn && JSON.parse(userStr).role === 'vip';
+
+            if(isLoggedIn && !isVip) { document.getElementById('academyLockMsg').classList.remove('hidden'); } 
+            else { document.getElementById('academyLockMsg').classList.add('hidden'); }
+
+            academyModules.forEach((mod, idx) => {
+                const li = document.createElement('li');
+                li.className = `p-4 cursor-pointer hover:bg-dark-800 transition border-b border-dark-700 text-sm font-semibold text-gray-400 flex justify-between items-center group`;
+                li.innerHTML = `<span>${mod.title}</span> <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>`;
+                
+                li.onclick = () => {
+                    document.querySelectorAll('#moduleList li').forEach(el => el.classList.remove('tab-active'));
+                    li.classList.add('tab-active');
+                    if(!mod.isFree && !isVip) {
+                        content.innerHTML = isLoggedIn ? mod.content : `<div class="text-center py-20"><i class="fas fa-fingerprint text-6xl text-dark-600 mb-6"></i><h3 class="text-2xl font-black text-white mb-3">Otorisasi Diperlukan</h3><button onclick="openAuthModal('login')" class="bg-white text-dark-900 font-bold px-8 py-3 rounded-xl mt-4 text-sm font-mono">Login System</button></div>`;
+                    } else { content.innerHTML = mod.content; }
+                };
+                list.appendChild(li);
+                if(idx === 0) li.click();
+            });
+        }
+
+        /* ================= AUTH SYSTEM (SIMULATOR) ================= */
+        let authMode = 'login';
+        function openAuthModal(mode) { authMode = mode; updateAuthUI(); document.getElementById('authModal').classList.remove('hidden'); document.getElementById('authModal').classList.add('flex'); }
+        function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); document.getElementById('authModal').classList.remove('flex'); document.getElementById('authForm').reset(); }
+        function toggleAuthMode() { authMode = authMode === 'login' ? 'register' : 'login'; updateAuthUI(); }
+        
+        function updateAuthUI() {
+            const isReg = authMode === 'register';
+            document.getElementById('authTitle').innerText = isReg ? 'Register Access' : 'System Login';
+            document.getElementById('nameFieldGroup').classList.toggle('hidden', !isReg);
+            document.getElementById('authName').required = isReg;
+            document.getElementById('authSubmitBtn').innerText = isReg ? 'CREATE ID' : 'AUTHORIZE';
+            document.getElementById('authSwitchText').innerText = isReg ? 'Already registered?' : 'No account?';
+            document.getElementById('authSwitchLink').innerText = isReg ? 'Login' : 'Register Access';
+            document.getElementById('authError').classList.add('hidden');
+        }
+
+        function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const pass = document.getElementById('authPassword').value;
+            
+            if (authMode === 'register') {
+                const user = { name: document.getElementById('authName').value, email, pass, role: 'free' };
+                localStorage.setItem('kzk_system_user', JSON.stringify(user));
+                finishAuth(user);
+            } else {
+                const savedStr = localStorage.getItem('kzk_system_user');
+                if (savedStr) {
+                    const saved = JSON.parse(savedStr);
+                    if (saved.email === email && saved.pass === pass) finishAuth(saved);
+                    else alert("Password Salah");
+                } else alert("Email tidak ditemukan");
+            }
+        }
+
+        function finishAuth(user) {
+            closeAuthModal(); updateNavbarState();
+            if(!document.getElementById('academy').classList.contains('hidden-section')) loadAcademyMenu();
+        }
+
+        function logout() {
+            localStorage.removeItem('kzk_system_user'); updateNavbarState();
+            if(!document.getElementById('academy').classList.contains('hidden-section')) loadAcademyMenu();
+        }
+
+        function updateNavbarState() {
+            const userStr = localStorage.getItem('kzk_system_user');
+            const desk = document.getElementById('authArea'); const mob = document.getElementById('mobileAuthArea');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                const badge = user.role === 'vip' ? '<span class="text-brand-400 ml-2 font-mono text-[10px] bg-brand-400/10 px-1.5 py-0.5 rounded">ELITE VIP</span>' : '<span class="text-gray-400 ml-2 font-mono text-[10px] bg-dark-800 px-1.5 py-0.5 rounded">BASIC</span>';
+                desk.innerHTML = `<div class="flex items-center"><span class="text-white text-xs font-bold font-mono uppercase">${user.name} ${badge}</span><button onclick="logout()" class="ml-3 text-gray-500 hover:text-red-500 transition"><i class="fas fa-power-off text-sm"></i></button></div>`;
+                mob.innerHTML = `<div class="px-4 py-3 text-white font-bold border-b border-dark-700 font-mono text-sm">${user.name} ${badge}</div><button onclick="logout(); toggleMobileMenu()" class="block w-full py-3 text-red-500 font-bold text-sm">LOGOUT</button>`;
+            } else {
+                desk.innerHTML = `<button onclick="openAuthModal('login')" class="text-xs font-mono text-gray-400 hover:text-white uppercase">Login</button><button onclick="openAuthModal('register')" class="bg-white text-dark-900 font-bold text-xs px-5 py-2.5 rounded-lg ml-4 uppercase">Register</button>`;
+                mob.innerHTML = `<button onclick="openAuthModal('login'); toggleMobileMenu()" class="block py-4 text-gray-300 font-bold border-b border-dark-700 font-mono text-sm uppercase">Login System</button><button onclick="openAuthModal('register'); toggleMobileMenu()" class="block py-4 text-brand-400 font-bold font-mono text-sm uppercase">Register Access</button>`;
+            }
+        }
+
+        /* ================= INITIALIZATION ================= */
+        window.onload = () => { updateNavbarState(); showSection('home'); };
+    </script>
+</body>
+</html>
